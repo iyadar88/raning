@@ -5,9 +5,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// تأكد من وجود ملف devices.json
+// التأكد من وجود ملف devices.json
 if (!fs.existsSync('devices.json')) {
     fs.writeFileSync('devices.json', JSON.stringify([]));
 }
@@ -34,18 +35,27 @@ app.post('/ring/:phoneName', (req, res) => {
     } else res.status(404).json({ status: 'not found' });
 });
 
-// التحقق من حالة الرنين (للتطبيق)
-app.get('/status/:phoneName', (req, res) => {
+// تغيير حالة الرنين (زر الرن ↔ توقف)
+app.post('/status/:phoneName', (req, res) => {
     let devices = JSON.parse(fs.readFileSync('devices.json', 'utf8'));
     const device = devices.find(d => d.name === req.params.phoneName);
     if (device) {
-        res.json({ ringing: device.ringing });
-        device.ringing = false; // بعد القراءة إعادة ضبط
+        const { ringing } = req.body;
+        device.ringing = ringing;
         fs.writeFileSync('devices.json', JSON.stringify(devices));
+        res.json({ status: 'ok', ringing: device.ringing });
     } else res.status(404).json({ status: 'not found' });
 });
 
-// جلب كل الأجهزة (لواجهة الموقع)
+// حذف جهاز
+app.post('/delete/:phoneName', (req, res) => {
+    let devices = JSON.parse(fs.readFileSync('devices.json', 'utf8'));
+    devices = devices.filter(d => d.name !== req.params.phoneName);
+    fs.writeFileSync('devices.json', JSON.stringify(devices));
+    res.json({ status: 'deleted' });
+});
+
+// جلب الأجهزة (لواجهة الموقع)
 app.get('/devices', (req, res) => {
     let devices = JSON.parse(fs.readFileSync('devices.json', 'utf8'));
     res.json(devices);
