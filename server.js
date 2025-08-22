@@ -1,18 +1,22 @@
-// server.js
 const express = require('express');
 const fs = require('fs');
 const bodyParser = require('body-parser');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+// تأكد من وجود ملف devices.json
+if (!fs.existsSync('devices.json')) {
+    fs.writeFileSync('devices.json', JSON.stringify([]));
+}
 
 // تسجيل جهاز جديد
 app.post('/register', (req, res) => {
     const { phoneName } = req.body;
     let devices = JSON.parse(fs.readFileSync('devices.json', 'utf8'));
-    if(!devices.find(d => d.name === phoneName)){
+    if (!devices.find(d => d.name === phoneName)) {
         devices.push({ name: phoneName, ringing: false });
         fs.writeFileSync('devices.json', JSON.stringify(devices));
     }
@@ -23,7 +27,7 @@ app.post('/register', (req, res) => {
 app.post('/ring/:phoneName', (req, res) => {
     let devices = JSON.parse(fs.readFileSync('devices.json', 'utf8'));
     const device = devices.find(d => d.name === req.params.phoneName);
-    if(device){
+    if (device) {
         device.ringing = true;
         fs.writeFileSync('devices.json', JSON.stringify(devices));
         res.json({ status: 'ringing' });
@@ -34,11 +38,17 @@ app.post('/ring/:phoneName', (req, res) => {
 app.get('/status/:phoneName', (req, res) => {
     let devices = JSON.parse(fs.readFileSync('devices.json', 'utf8'));
     const device = devices.find(d => d.name === req.params.phoneName);
-    if(device){
+    if (device) {
         res.json({ ringing: device.ringing });
-        device.ringing = false; // بعد قراءة الحالة، يتم إعادة ضبطها
+        device.ringing = false; // بعد القراءة إعادة ضبط
         fs.writeFileSync('devices.json', JSON.stringify(devices));
     } else res.status(404).json({ status: 'not found' });
+});
+
+// جلب كل الأجهزة (لواجهة الموقع)
+app.get('/devices', (req, res) => {
+    let devices = JSON.parse(fs.readFileSync('devices.json', 'utf8'));
+    res.json(devices);
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
