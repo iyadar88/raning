@@ -9,16 +9,10 @@ h1 {
     text-align: center;
 }
 
-ul#deviceList {
-    list-style: none;
-    padding: 0;
+#phoneContainer {
     max-width: 400px;
-    margin: 0 auto;
-}
-
-ul#deviceList li {
+    margin: 20px auto;
     background-color: #fff;
-    margin-bottom: 10px;
     padding: 15px;
     border-radius: 8px;
     display: flex;
